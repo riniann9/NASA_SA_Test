@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, Suspense } from "react"
+import { useEffect, useMemo, useState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -13,6 +13,7 @@ type AnalysisResult = {
   isExoplanet: boolean
   confidence: number
   explanation: string
+  aiAnalysis?: string
   topFeatures: Array<{
     name: string
     impact: number
@@ -26,17 +27,54 @@ type AnalysisResult = {
 function ResultsContent() {
   const searchParams = useSearchParams()
   const [result, setResult] = useState<AnalysisResult | null>(null)
+  const [imageUrl, setImageUrl] = useState<string | null>(null)
+
+  // Compute the planet image prompt only when result is available
+  const planetImageQuery = useMemo(() => {
+    if (!result) return null
+    const normalized = normalizePlanetData(result.planetData)
+    return generatePlanetImageQuery(normalized)
+  }, [result])
+
+  // Always register this hook; guard inside on missing data
+  useEffect(() => {
+    let isMounted = true
+    async function loadImage() {
+      if (!planetImageQuery) return
+      try {
+        const res = await fetch('/api/generate-planet-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: planetImageQuery })
+        })
+        if (!res.ok) throw new Error('image api failed')
+        const data = await res.json()
+        if (isMounted && data.imageUrl) setImageUrl(data.imageUrl)
+      } catch {
+        // fall back to public AI image generator
+        if (isMounted) setImageUrl(`https://image.pollinations.ai/prompt/${encodeURIComponent(planetImageQuery)}?width=400&height=400`)
+      }
+    }
+    loadImage()
+    return () => { isMounted = false }
+  }, [planetImageQuery])
 
   useEffect(() => {
     const planetDataStr = searchParams.get("planetData")
+    const aiAnalysisStr = searchParams.get("aiAnalysis")
     const source = searchParams.get("source")
+    const error = searchParams.get("error")
 
     if (planetDataStr) {
       const planetData = JSON.parse(planetDataStr)
+      const aiAnalysis = aiAnalysisStr ? JSON.parse(aiAnalysisStr) : null
 
-      // Simulate AI analysis with placeholder logic
-      const mockAnalysis = analyzePlanetData(planetData, source || "unknown")
-      setResult(mockAnalysis)
+      // Use AI analysis if available, otherwise fallback to mock analysis
+      const analysis = aiAnalysis 
+        ? analyzePlanetDataWithAI(planetData, aiAnalysis, source || "unknown")
+        : analyzePlanetData(planetData, source || "unknown")
+      
+      setResult(analysis)
     }
   }, [searchParams])
 
@@ -47,9 +85,6 @@ function ResultsContent() {
       </div>
     )
   }
-
-  // Generate planet image query based on features
-  const planetImageQuery = generatePlanetImageQuery(result.planetData)
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
@@ -115,20 +150,40 @@ function ResultsContent() {
           <Card className="p-6 bg-card/50 backdrop-blur border-2 border-border">
             <h2 className="text-2xl font-bold mb-4 text-primary flex items-center gap-2">
               <TrendingUp className="w-6 h-6" />
-              AI Analysis
+              {result.aiAnalysis ? 'Gemini AI Analysis' : 'AI Analysis'}
             </h2>
-            <p className="text-foreground leading-relaxed">{result.explanation}</p>
+            {result.aiAnalysis ? (
+              <div className="space-y-4">
+                <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                  <h3 className="font-semibold text-primary mb-2">Detailed Scientific Analysis:</h3>
+                  <div className="text-foreground leading-relaxed whitespace-pre-line">
+                    {result.aiAnalysis}
+                  </div>
+                </div>
+                <div className="p-4 bg-muted/50 border border-border rounded-lg">
+                  <h3 className="font-semibold text-foreground mb-2">Summary:</h3>
+                  <p className="text-foreground leading-relaxed">{result.explanation}</p>
+                </div>
+              </div>
+            ) : (
+              <p className="text-foreground leading-relaxed">{result.explanation}</p>
+            )}
           </Card>
 
           {/* Planet Visualization */}
           <Card className="p-6 bg-card/50 backdrop-blur border-2 border-border">
             <h2 className="text-2xl font-bold mb-4 text-primary">Planet Visualization</h2>
             <div className="aspect-square rounded-lg overflow-hidden bg-background/50 border border-border">
-              <img
-                src={`/.jpg?height=400&width=400&query=${encodeURIComponent(planetImageQuery)}`}
-                alt="AI Generated Planet"
-                className="w-full h-full object-cover"
-              />
+              {imageUrl ? (
+                <img
+                  src={imageUrl}
+                  alt="AI Generated Planet"
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">Generating image…</div>
+              )}
             </div>
             <p className="text-sm text-muted-foreground mt-3 text-center">
               AI-generated visualization based on features
@@ -198,10 +253,73 @@ export default function ResultsPage() {
   )
 }
 
+// AI analysis function that processes Gemini response
+function analyzePlanetDataWithAI(planetData: any, aiAnalysis: string, source: string): AnalysisResult {
+  // Extract key information from Gemini response
+  const isExoplanet = aiAnalysis.toLowerCase().includes('exoplanet') && 
+    (aiAnalysis.toLowerCase().includes('yes') || aiAnalysis.toLowerCase().includes('likely'))
+  
+  // Extract confidence from the response or calculate based on content
+  const confidenceMatch = aiAnalysis.match(/(\d+)%/i)
+  const confidence = confidenceMatch ? parseInt(confidenceMatch[1]) : 85
+
+  // Extract planet type if mentioned
+  const planetTypeMatch = aiAnalysis.match(/(super-earth|gas giant|terrestrial|rocky|ice giant)/i)
+  const planetType = planetTypeMatch ? planetTypeMatch[1] : 'Unknown'
+
+  // Create a summary explanation
+  const explanation = `Based on Gemini AI analysis, this celestial body ${isExoplanet ? 'is classified as an exoplanet' : 'does not meet exoplanet criteria'}. The AI has provided detailed scientific insights about the planetary characteristics, habitability potential, and scientific significance.`
+
+  // Extract top features from the analysis
+  const topFeatures = [
+    {
+      name: "AI Classification",
+      impact: 95,
+      value: isExoplanet ? "Exoplanet" : "Not Exoplanet",
+      reasoning: "Primary determination from Gemini AI analysis",
+    },
+    {
+      name: "Planet Type",
+      impact: 88,
+      value: planetType,
+      reasoning: "Classification based on physical and orbital characteristics",
+    },
+    {
+      name: "Habitability Assessment",
+      impact: 82,
+      value: planetData.habitability_score || "Unknown",
+      reasoning: "Potential for supporting life based on environmental conditions",
+    },
+    {
+      name: "Orbital Characteristics",
+      impact: 76,
+      value: `${planetData.orbital_period} days`,
+      reasoning: "Orbital period and distance from host star",
+    },
+    {
+      name: "Physical Properties",
+      impact: 71,
+      value: `${planetData.planet_radius} Earth radii`,
+      reasoning: "Size and mass characteristics compared to Earth",
+    },
+  ]
+
+  return {
+    isExoplanet,
+    confidence,
+    explanation,
+    aiAnalysis,
+    topFeatures,
+    planetData,
+    source,
+  }
+}
+
 // Placeholder AI analysis function
 function analyzePlanetData(planetData: any, source: string): AnalysisResult {
   // Extract features for analysis
-  const features = source === "existing" ? planetData.features : planetData
+  const raw = source === "existing" ? planetData.features : planetData
+  const features = normalizePlanetData(raw)
 
   // Simple heuristic: check habitability score or other key metrics
   const habitabilityScore = Number.parseFloat(features.habitability_score) || 0
@@ -299,4 +417,20 @@ function generatePlanetImageQuery(planetData: any): string {
   description += " realistic space background stars"
 
   return description
+}
+
+// Normalize new Kepler/KOI field names to previous keys used in analysis
+function normalizePlanetData(data: any) {
+  if (!data) return {}
+  const out: any = { ...data }
+  // Map new names -> legacy keys consumed by analysis and image prompt
+  if (data.planetary_radius_earth_radii) out.planet_radius = String(data.planetary_radius_earth_radii)
+  if (data.orbital_period_days) out.orbital_period = String(data.orbital_period_days)
+  if (data.equilibrium_temperature_k) out.equilibrium_temperature = String(data.equilibrium_temperature_k)
+  if (data.insolation_flux_earth_flux) out.insolation_flux = String(data.insolation_flux_earth_flux)
+  if (data.stellar_effective_temperature_k) out.stellar_temperature = String(data.stellar_effective_temperature_k)
+  if (data.stellar_radius_solar_radii) out.stellar_radius = String(data.stellar_radius_solar_radii)
+  // Rings not present; default to false
+  if (out.ring_system === undefined) out.ring_system = "false"
+  return out
 }

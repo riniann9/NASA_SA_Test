@@ -13,84 +13,120 @@ import Link from "next/link"
 import { LoadingScreen } from "@/components/loading-screen"
 
 type PlanetFormData = {
-  name: string
-  orbital_period: string
-  planet_radius: string
-  planet_mass: string
-  semi_major_axis: string
-  eccentricity: string
-  inclination: string
-  stellar_mass: string
-  stellar_radius: string
-  stellar_temperature: string
-  stellar_luminosity: string
-  distance_from_earth: string
-  discovery_year: string
-  detection_method: string
-  equilibrium_temperature: string
-  insolation_flux: string
-  density: string
-  surface_gravity: string
-  escape_velocity: string
-  albedo: string
-  atmospheric_composition: string
-  magnetic_field_strength: string
-  rotation_period: string
-  axial_tilt: string
-  number_of_moons: string
-  ring_system: string
-  habitability_score: string
+  kepid: string
+  koi_name: string
+  kepler_name: string
+  orbital_period_days: string
+  transit_epoch_bkjd: string
+  impact_parameter: string
+  transit_duration_hrs: string
+  transit_depth_ppm: string
+  planetary_radius_earth_radii: string
+  equilibrium_temperature_k: string
+  insolation_flux_earth_flux: string
+  transit_snr: string
+  tce_planet_number: string
+  tce_delivery: string
+  stellar_effective_temperature_k: string
+  stellar_surface_gravity_log: string
+  stellar_radius_solar_radii: string
+  ra_deg: string
+  dec_deg: string
+  kepler_mag: string
 }
 
 export default function NewPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [formData, setFormData] = useState<PlanetFormData>({
-    name: "",
-    orbital_period: "",
-    planet_radius: "",
-    planet_mass: "",
-    semi_major_axis: "",
-    eccentricity: "",
-    inclination: "",
-    stellar_mass: "",
-    stellar_radius: "",
-    stellar_temperature: "",
-    stellar_luminosity: "",
-    distance_from_earth: "",
-    discovery_year: "",
-    detection_method: "",
-    equilibrium_temperature: "",
-    insolation_flux: "",
-    density: "",
-    surface_gravity: "",
-    escape_velocity: "",
-    albedo: "",
-    atmospheric_composition: "",
-    magnetic_field_strength: "",
-    rotation_period: "",
-    axial_tilt: "",
-    number_of_moons: "",
-    ring_system: "false",
-    habitability_score: "",
+    kepid: "",
+    koi_name: "",
+    kepler_name: "",
+    orbital_period_days: "",
+    transit_epoch_bkjd: "",
+    impact_parameter: "",
+    transit_duration_hrs: "",
+    transit_depth_ppm: "",
+    planetary_radius_earth_radii: "",
+    equilibrium_temperature_k: "",
+    insolation_flux_earth_flux: "",
+    transit_snr: "",
+    tce_planet_number: "",
+    tce_delivery: "",
+    stellar_effective_temperature_k: "",
+    stellar_surface_gravity_log: "",
+    stellar_radius_solar_radii: "",
+    ra_deg: "",
+    dec_deg: "",
+    kepler_mag: "",
   })
 
   const handleInputChange = (field: keyof PlanetFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
+  const populateSampleData = () => {
+    const sampleData: PlanetFormData = {
+      kepid: "10797460",
+      koi_name: "K00752.01",
+      kepler_name: "Kepler-227b",
+      orbital_period_days: "9.48803557±2.775e-05",
+      transit_epoch_bkjd: "170.53875±0.00216",
+      impact_parameter: "0.146 (+0.318/-0.146)",
+      transit_duration_hrs: "2.9575±0.0819",
+      transit_depth_ppm: "615.8±19.5",
+      planetary_radius_earth_radii: "2.26 (+0.26/-0.15)",
+      equilibrium_temperature_k: "793",
+      insolation_flux_earth_flux: "93.59 (+29.45/-16.65)",
+      transit_snr: "35.80",
+      tce_planet_number: "1",
+      tce_delivery: "q1_q17_dr25_tce",
+      stellar_effective_temperature_k: "5455±81",
+      stellar_surface_gravity_log: "4.467 (+0.064/-0.096)",
+      stellar_radius_solar_radii: "0.927 (+0.105/-0.061)",
+      ra_deg: "291.934230",
+      dec_deg: "48.141651",
+      kepler_mag: "15.347",
+    }
+    setFormData(sampleData)
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsAnalyzing(true)
 
-    // Simulate AI analysis
-    await new Promise((resolve) => setTimeout(resolve, 3000))
+    try {
+      // Call Gemini API for analysis
+      const response = await fetch('/api/analyze-planet', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ formData }),
+      })
 
-    // Navigate to results with form data
-    const params = new URLSearchParams({
-      planetData: JSON.stringify(formData),
-      source: "new",
-    })
-    window.location.href = `/results?${params.toString()}`
+      if (!response.ok) {
+        throw new Error('Failed to analyze planet data')
+      }
+
+      const result = await response.json()
+      
+      // Navigate to results with form data and AI analysis
+      const params = new URLSearchParams({
+        planetData: JSON.stringify(formData),
+        aiAnalysis: JSON.stringify(result.analysis),
+        source: "new",
+      })
+      window.location.href = `/results?${params.toString()}`
+    } catch (error) {
+      console.error('Error analyzing planet:', error)
+      // Fallback to results without AI analysis
+      const params = new URLSearchParams({
+        planetData: JSON.stringify(formData),
+        source: "new",
+        error: "AI analysis failed"
+      })
+      window.location.href = `/results?${params.toString()}`
+    }
   }
 
   if (isAnalyzing) {
@@ -99,85 +135,53 @@ export default function NewPage() {
 
   const inputSections = [
     {
-      title: "Basic Information",
-      icon: "🌍",
+      title: "Identifiers",
+      icon: "🛰️",
       fields: [
-        { key: "name", label: "Planet Name/Identifier", type: "text", placeholder: "e.g., Kepler-442b" },
-        { key: "discovery_year", label: "Discovery Year", type: "number", placeholder: "e.g., 2015" },
-        { key: "detection_method", label: "Detection Method", type: "text", placeholder: "e.g., Transit" },
-        {
-          key: "distance_from_earth",
-          label: "Distance from Earth (light years)",
-          type: "number",
-          placeholder: "e.g., 1206",
-        },
+        { key: "kepid", label: "KepID", type: "text", placeholder: "e.g., 10797460" },
+        { key: "koi_name", label: "KOI Name", type: "text", placeholder: "e.g., K00752.01" },
+        { key: "kepler_name", label: "Kepler Name", type: "text", placeholder: "e.g., Kepler-227b" },
       ],
     },
     {
-      title: "Orbital Properties",
+      title: "Transit & Orbit",
       icon: "🔄",
       fields: [
-        { key: "orbital_period", label: "Orbital Period (days)", type: "number", placeholder: "e.g., 112.3" },
-        { key: "semi_major_axis", label: "Semi-Major Axis (AU)", type: "number", placeholder: "e.g., 0.409" },
-        { key: "eccentricity", label: "Eccentricity", type: "number", placeholder: "e.g., 0.04" },
-        { key: "inclination", label: "Inclination (degrees)", type: "number", placeholder: "e.g., 89.7" },
+        { key: "orbital_period_days", label: "Orbital Period [days]", type: "text", placeholder: "e.g., 9.488..." },
+        { key: "transit_epoch_bkjd", label: "Transit Epoch [BKJD]", type: "text", placeholder: "e.g., 170.538..." },
+        { key: "impact_parameter", label: "Impact Parameter", type: "text", placeholder: "e.g., 0.146 (+.../-...)" },
+        { key: "transit_duration_hrs", label: "Transit Duration [hrs]", type: "text", placeholder: "e.g., 2.95" },
+        { key: "transit_depth_ppm", label: "Transit Depth [ppm]", type: "text", placeholder: "e.g., 615.8" },
+        { key: "transit_snr", label: "Transit S/N", type: "text", placeholder: "e.g., 35.80" },
+        { key: "tce_planet_number", label: "TCE Planet Number", type: "text", placeholder: "e.g., 1" },
+        { key: "tce_delivery", label: "TCE Delivery", type: "text", placeholder: "e.g., q1_q17_dr25_tce" },
       ],
     },
     {
-      title: "Physical Properties",
-      icon: "⚡",
+      title: "Planet Properties",
+      icon: "🪐",
       fields: [
-        { key: "planet_radius", label: "Planet Radius (Earth radii)", type: "number", placeholder: "e.g., 1.34" },
-        { key: "planet_mass", label: "Planet Mass (Earth masses)", type: "number", placeholder: "e.g., 2.36" },
-        { key: "density", label: "Density (g/cm³)", type: "number", placeholder: "e.g., 6.2" },
-        { key: "surface_gravity", label: "Surface Gravity (m/s²)", type: "number", placeholder: "e.g., 13.2" },
-        { key: "escape_velocity", label: "Escape Velocity (km/s)", type: "number", placeholder: "e.g., 16.8" },
+        { key: "planetary_radius_earth_radii", label: "Planetary Radius [Earth radii]", type: "text", placeholder: "e.g., 2.26 (+.../-...)" },
+        { key: "equilibrium_temperature_k", label: "Equilibrium Temperature [K]", type: "text", placeholder: "e.g., 793" },
+        { key: "insolation_flux_earth_flux", label: "Insolation Flux [Earth flux]", type: "text", placeholder: "e.g., 93.59 (+.../-...)" },
       ],
     },
     {
       title: "Stellar Properties",
       icon: "⭐",
       fields: [
-        { key: "stellar_mass", label: "Stellar Mass (Solar masses)", type: "number", placeholder: "e.g., 0.61" },
-        { key: "stellar_radius", label: "Stellar Radius (Solar radii)", type: "number", placeholder: "e.g., 0.6" },
-        { key: "stellar_temperature", label: "Stellar Temperature (K)", type: "number", placeholder: "e.g., 4402" },
-        { key: "stellar_luminosity", label: "Stellar Luminosity (Solar)", type: "number", placeholder: "e.g., 0.17" },
+        { key: "stellar_effective_temperature_k", label: "Stellar Effective Temperature [K]", type: "text", placeholder: "e.g., 5455±81" },
+        { key: "stellar_surface_gravity_log", label: "Stellar Surface Gravity [log10(cm/s**2)]", type: "text", placeholder: "e.g., 4.467 (+.../-...)" },
+        { key: "stellar_radius_solar_radii", label: "Stellar Radius [Solar radii]", type: "text", placeholder: "e.g., 0.927 (+.../-...)" },
       ],
     },
     {
-      title: "Atmospheric & Climate",
-      icon: "🌡️",
+      title: "Sky Position & Photometry",
+      icon: "📍",
       fields: [
-        {
-          key: "equilibrium_temperature",
-          label: "Equilibrium Temperature (K)",
-          type: "number",
-          placeholder: "e.g., 233",
-        },
-        { key: "insolation_flux", label: "Insolation Flux (Earth flux)", type: "number", placeholder: "e.g., 0.7" },
-        { key: "albedo", label: "Albedo", type: "number", placeholder: "e.g., 0.3" },
-        {
-          key: "atmospheric_composition",
-          label: "Atmospheric Composition",
-          type: "text",
-          placeholder: "e.g., Unknown",
-        },
-      ],
-    },
-    {
-      title: "Additional Features",
-      icon: "🔬",
-      fields: [
-        {
-          key: "magnetic_field_strength",
-          label: "Magnetic Field Strength (Earth = 1)",
-          type: "number",
-          placeholder: "e.g., 0.8",
-        },
-        { key: "rotation_period", label: "Rotation Period (days)", type: "number", placeholder: "e.g., 112.3" },
-        { key: "axial_tilt", label: "Axial Tilt (degrees)", type: "number", placeholder: "e.g., 23.5" },
-        { key: "number_of_moons", label: "Number of Moons", type: "number", placeholder: "e.g., 0" },
-        { key: "habitability_score", label: "Habitability Score (0-1)", type: "number", placeholder: "e.g., 0.83" },
+        { key: "ra_deg", label: "RA [deg]", type: "text", placeholder: "e.g., 291.934230" },
+        { key: "dec_deg", label: "Dec [deg]", type: "text", placeholder: "e.g., 48.141651" },
+        { key: "kepler_mag", label: "Kepler-band [mag]", type: "text", placeholder: "e.g., 15.347" },
       ],
     },
   ]
@@ -213,6 +217,17 @@ export default function NewPage() {
           <p className="text-xl text-muted-foreground">
             Enter the features of your celestial body to determine if it's an exoplanet
           </p>
+          <div className="flex justify-center gap-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={populateSampleData}
+              className="gap-2"
+            >
+              <Sparkles className="w-4 h-4" />
+              Fill with Sample Data (Kepler-442b)
+            </Button>
+          </div>
         </div>
 
         {/* Form */}
@@ -249,28 +264,7 @@ export default function NewPage() {
               </Card>
             ))}
 
-            {/* Ring System Card */}
-            <Card className="p-6 bg-card/50 backdrop-blur border-2 border-border hover:border-primary/50 transition-colors">
-              <div className="flex items-center gap-3 mb-6">
-                <span className="text-3xl">💍</span>
-                <h2 className="text-2xl font-bold text-foreground">Ring System</h2>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="ring_system" className="text-sm font-medium text-foreground">
-                  Does the planet have a ring system?
-                </Label>
-                <Select value={formData.ring_system} onValueChange={(value) => handleInputChange("ring_system", value)}>
-                  <SelectTrigger className="bg-background/50 border-border focus:border-primary">
-                    <SelectValue placeholder="Select option" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="false">No</SelectItem>
-                    <SelectItem value="true">Yes</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </Card>
+          {/* Extra card removed for new field set */}
           </div>
 
           {/* Submit Button */}
