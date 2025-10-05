@@ -187,66 +187,68 @@ export default function NewPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Cosmic background effects */}
+    <div className="min-h-screen bg-background relative">
+      {/* Cosmic background effects - reduced size and opacity */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-primary/5 rounded-full blur-[100px] animate-pulse" />
         <div
-          className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-accent/10 rounded-full blur-[120px] animate-pulse"
+          className="absolute bottom-1/4 left-1/4 w-64 h-64 bg-accent/5 rounded-full blur-[100px] animate-pulse"
           style={{ animationDelay: "1s" }}
         />
       </div>
 
-      <div className="relative z-10 container mx-auto px-4 py-8 max-w-7xl">
+      <div className="relative z-10 container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6 sm:mb-8">
           <Link href="/">
             <Button variant="outline" size="sm" className="gap-2 bg-transparent">
               <ArrowLeft className="w-4 h-4" />
-              Back to Home
+              <span className="hidden sm:inline">Back to Home</span>
+              <span className="sm:hidden">Home</span>
             </Button>
           </Link>
         </div>
 
         {/* Title */}
-        <div className="text-center mb-12 space-y-4">
-          <div className="flex items-center justify-center gap-3">
-            <Rocket className="w-12 h-12 text-primary animate-float" />
-            <h1 className="text-5xl font-bold text-primary">New Planet Prediction</h1>
+        <div className="text-center mb-6 sm:mb-8 space-y-2 sm:space-y-3">
+          <div className="flex items-center justify-center gap-2">
+            <Rocket className="w-6 h-6 sm:w-8 sm:h-8 text-primary animate-float" />
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-primary">New Planet Prediction</h1>
           </div>
-          <p className="text-xl text-muted-foreground">
+          <p className="text-base sm:text-lg text-muted-foreground px-4">
             Enter the features of your celestial body to determine if it's an exoplanet
           </p>
-          <div className="flex justify-center gap-4">
+          <div className="flex justify-center gap-2 sm:gap-3">
             <Button
               type="button"
               variant="outline"
               onClick={populateSampleData}
-              className="gap-2"
+              className="gap-2 text-xs sm:text-sm"
             >
-              <Sparkles className="w-4 h-4" />
-              Fill with Sample Data (Kepler-442b)
+              <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Fill with Sample Data (Kepler-227b)</span>
+              <span className="sm:hidden">Sample Data</span>
             </Button>
           </div>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit}>
-          <div className="grid lg:grid-cols-2 gap-6 mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
             {inputSections.map((section, sectionIndex) => (
               <Card
                 key={sectionIndex}
-                className="p-6 bg-card/50 backdrop-blur border-2 border-border hover:border-primary/50 transition-colors"
+                className="p-3 sm:p-4 bg-card/50 backdrop-blur border border-border hover:border-primary/50 transition-colors"
               >
-                <div className="flex items-center gap-3 mb-6">
-                  <span className="text-3xl">{section.icon}</span>
-                  <h2 className="text-2xl font-bold text-foreground">{section.title}</h2>
+                <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                  <span className="text-xl sm:text-2xl">{section.icon}</span>
+                  <h2 className="text-base sm:text-lg font-bold text-foreground">{section.title}</h2>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-2 sm:space-y-3">
                   {section.fields.map((field) => (
-                    <div key={field.key} className="space-y-2">
-                      <Label htmlFor={field.key} className="text-sm font-medium text-foreground">
+                    <div key={field.key} className="space-y-1">
+                      <Label htmlFor={field.key} className="text-xs font-medium text-foreground">
                         {field.label}
                       </Label>
                       <Input
@@ -255,7 +257,7 @@ export default function NewPage() {
                         placeholder={field.placeholder}
                         value={formData[field.key as keyof PlanetFormData]}
                         onChange={(e) => handleInputChange(field.key as keyof PlanetFormData, e.target.value)}
-                        className="bg-background/50 border-border focus:border-primary"
+                        className="bg-background/50 border-border focus:border-primary text-xs sm:text-sm h-8 sm:h-10"
                         required
                       />
                     </div>
@@ -263,8 +265,6 @@ export default function NewPage() {
                 </div>
               </Card>
             ))}
-
-          {/* Extra card removed for new field set */}
           </div>
 
           {/* Submit Button */}
@@ -272,11 +272,11 @@ export default function NewPage() {
             <Button
               type="submit"
               size="lg"
-              className="gap-3 bg-primary hover:bg-primary/90 text-primary-foreground px-12 py-6 text-lg h-auto group"
+              className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base h-auto group w-full sm:w-auto"
             >
-              <Sparkles className="w-6 h-6 group-hover:animate-spin" />
+              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 group-hover:animate-spin" />
               Analyze with AI
-              <Sparkles className="w-6 h-6 group-hover:animate-spin" />
+              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 group-hover:animate-spin" />
             </Button>
           </div>
         </form>

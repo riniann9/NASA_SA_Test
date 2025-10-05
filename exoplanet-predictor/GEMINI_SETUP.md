@@ -1,53 +1,48 @@
-# Gemini AI Integration Setup
+# Gemini API Setup Instructions
 
-## Setup Instructions
+To enable real AI analysis of exoplanet data, you need to set up a Gemini API key.
+
+## Steps:
 
 1. **Get a Gemini API Key:**
-   - Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
+   - Go to [Google AI Studio](https://makersuite.google.com/app/apikey)
+   - Sign in with your Google account
    - Create a new API key
    - Copy the API key
 
-2. **Create Environment File:**
-   - Create a `.env.local` file in the project root
-   - Add the following line:
+2. **Set up Environment Variable:**
+   Create a `.env.local` file in the project root with:
    ```
    GEMINI_API_KEY=your_actual_api_key_here
    ```
 
-3. **Install Dependencies:**
-   ```bash
-   npm install
-   # or
-   pnpm install
-   ```
-
-4. **Run the Application:**
+3. **Restart the Development Server:**
    ```bash
    npm run dev
-   # or
-   pnpm dev
    ```
 
-## Features Added
+## Features:
 
-- ✅ Gemini AI integration for planet analysis
-- ✅ Sample data population (Kepler-442b)
-- ✅ Enhanced results page with AI analysis display
-- ✅ Error handling for API failures
-- ✅ Fallback to mock analysis if AI fails
+- **Real AI Analysis**: Uses Google's Gemini LLM to analyze exoplanet data
+- **Scientific Accuracy**: Based on NASA Kepler dataset parameters
+- **Detailed Explanations**: Provides reasoning for each classification decision
+- **Feature Importance**: Ranks the 5 most important features in the analysis
+- **Fallback Mode**: If API key is not set, falls back to mock analysis
 
-## How It Works
+## API Endpoint:
 
-1. User fills out the planet prediction form
-2. Clicks "Analyze with AI" button
-3. Form data is sent to `/api/analyze-planet` endpoint
-4. Gemini AI analyzes the data and provides scientific insights
-5. Results are displayed with both AI analysis and summary
+The application uses `/api/analyze-planet` to send data to Gemini and receive structured analysis results.
 
-## API Endpoint
+## Data Format:
 
-The `/api/analyze-planet` endpoint:
-- Accepts POST requests with form data
-- Calls Gemini AI with a detailed scientific prompt
-- Returns structured analysis results
-- Handles errors gracefully
+The system automatically converts form inputs to NASA Kepler dataset format and sends them to Gemini with the following prompt structure:
+
+```
+You are an expert exoplanet scientist analyzing data from NASA space missions...
+```
+
+The response includes:
+- Boolean classification (exoplanet yes/no)
+- Top 5 most important features
+- Detailed explanations for each feature
+- Relevance ratings for scientific accuracy

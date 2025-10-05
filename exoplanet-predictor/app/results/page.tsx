@@ -1,13 +1,8 @@
 "use client"
 
-import { useEffect, useMemo, useState, Suspense } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, CheckCircle2, XCircle, TrendingUp, Home } from "lucide-react"
-import Link from "next/link"
-import { Progress } from "@/components/ui/progress"
+import { UnifiedResults } from "@/components/unified-results"
 
 type AnalysisResult = {
   isExoplanet: boolean
@@ -28,36 +23,6 @@ function ResultsContent() {
   const searchParams = useSearchParams()
   const [result, setResult] = useState<AnalysisResult | null>(null)
   const [imageUrl, setImageUrl] = useState<string | null>(null)
-
-  // Compute the planet image prompt only when result is available
-  const planetImageQuery = useMemo(() => {
-    if (!result) return null
-    const normalized = normalizePlanetData(result.planetData)
-    return generatePlanetImageQuery(normalized)
-  }, [result])
-
-  // Always register this hook; guard inside on missing data
-  useEffect(() => {
-    let isMounted = true
-    async function loadImage() {
-      if (!planetImageQuery) return
-      try {
-        const res = await fetch('/api/generate-planet-image', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt: planetImageQuery })
-        })
-        if (!res.ok) throw new Error('image api failed')
-        const data = await res.json()
-        if (isMounted && data.imageUrl) setImageUrl(data.imageUrl)
-      } catch {
-        // fall back to public AI image generator
-        if (isMounted) setImageUrl(`https://image.pollinations.ai/prompt/${encodeURIComponent(planetImageQuery)}?width=400&height=400`)
-      }
-    }
-    loadImage()
-    return () => { isMounted = false }
-  }, [planetImageQuery])
 
   useEffect(() => {
     const planetDataStr = searchParams.get("planetData")
@@ -87,155 +52,11 @@ function ResultsContent() {
   }
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Cosmic background effects */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div
-          className={`absolute top-1/4 right-1/4 w-96 h-96 ${result.isExoplanet ? "bg-primary/10" : "bg-destructive/10"} rounded-full blur-[120px] animate-pulse`}
-        />
-        <div
-          className={`absolute bottom-1/4 left-1/4 w-96 h-96 ${result.isExoplanet ? "bg-accent/10" : "bg-muted/10"} rounded-full blur-[120px] animate-pulse`}
-          style={{ animationDelay: "1s" }}
-        />
-      </div>
-
-      <div className="relative z-10 container mx-auto px-4 py-8 max-w-7xl">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <Link href="/">
-            <Button variant="outline" size="sm" className="gap-2 bg-transparent">
-              <Home className="w-4 h-4" />
-              Back to Home
-            </Button>
-          </Link>
-
-          <Badge variant="outline" className="text-sm">
-            Source: {result.source === "existing" ? "Existing Data" : "New Prediction"}
-          </Badge>
-        </div>
-
-        {/* Main Result Card */}
-        <Card
-          className={`p-8 mb-8 border-4 ${result.isExoplanet ? "border-primary bg-primary/5" : "border-destructive bg-destructive/5"}`}
-        >
-          <div className="flex flex-col md:flex-row items-center gap-8">
-            {/* Result Icon */}
-            <div className="flex-shrink-0">
-              {result.isExoplanet ? (
-                <CheckCircle2 className="w-32 h-32 text-primary animate-pulse" />
-              ) : (
-                <XCircle className="w-32 h-32 text-destructive animate-pulse" />
-              )}
-            </div>
-
-            {/* Result Text */}
-            <div className="flex-1 text-center md:text-left">
-              <h1 className="text-5xl font-bold mb-4 text-balance">
-                {result.isExoplanet ? (
-                  <span className="text-primary">Exoplanet Detected!</span>
-                ) : (
-                  <span className="text-destructive">Not an Exoplanet</span>
-                )}
-              </h1>
-              <p className="text-xl text-muted-foreground mb-4">
-                Confidence Level: <span className="font-bold text-foreground">{result.confidence}%</span>
-              </p>
-              <Progress value={result.confidence} className="h-3" />
-            </div>
-          </div>
-        </Card>
-
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* AI Explanation */}
-          <Card className="p-6 bg-card/50 backdrop-blur border-2 border-border">
-            <h2 className="text-2xl font-bold mb-4 text-primary flex items-center gap-2">
-              <TrendingUp className="w-6 h-6" />
-              {result.aiAnalysis ? 'Gemini AI Analysis' : 'AI Analysis'}
-            </h2>
-            {result.aiAnalysis ? (
-              <div className="space-y-4">
-                <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                  <h3 className="font-semibold text-primary mb-2">Detailed Scientific Analysis:</h3>
-                  <div className="text-foreground leading-relaxed whitespace-pre-line">
-                    {result.aiAnalysis}
-                  </div>
-                </div>
-                <div className="p-4 bg-muted/50 border border-border rounded-lg">
-                  <h3 className="font-semibold text-foreground mb-2">Summary:</h3>
-                  <p className="text-foreground leading-relaxed">{result.explanation}</p>
-                </div>
-              </div>
-            ) : (
-              <p className="text-foreground leading-relaxed">{result.explanation}</p>
-            )}
-          </Card>
-
-          {/* Planet Visualization */}
-          <Card className="p-6 bg-card/50 backdrop-blur border-2 border-border">
-            <h2 className="text-2xl font-bold mb-4 text-primary">Planet Visualization</h2>
-            <div className="aspect-square rounded-lg overflow-hidden bg-background/50 border border-border">
-              {imageUrl ? (
-                <img
-                  src={imageUrl}
-                  alt="AI Generated Planet"
-                  className="w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">Generating image…</div>
-              )}
-            </div>
-            <p className="text-sm text-muted-foreground mt-3 text-center">
-              AI-generated visualization based on features
-            </p>
-          </Card>
-        </div>
-
-        {/* Feature Impact Analysis */}
-        <Card className="p-6 mt-8 bg-card/50 backdrop-blur border-2 border-border">
-          <h2 className="text-2xl font-bold mb-6 text-primary">Key Features Impact</h2>
-          <div className="space-y-6">
-            {result.topFeatures.map((feature, index) => (
-              <div key={index} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Badge variant="outline" className="text-lg px-3 py-1">
-                      #{index + 1}
-                    </Badge>
-                    <span className="font-semibold text-foreground">{feature.name}</span>
-                  </div>
-                  <span className="text-sm text-muted-foreground">
-                    Value: <span className="font-bold text-foreground">{feature.value}</span>
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <Progress value={feature.impact} className="flex-1 h-3" />
-                  <span className="text-sm font-bold text-foreground w-12">{feature.impact}%</span>
-                </div>
-
-                <p className="text-sm text-muted-foreground pl-14">{feature.reasoning}</p>
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
-          <Link href="/existing">
-            <Button size="lg" variant="outline" className="gap-2 min-w-[200px] bg-transparent">
-              <ArrowLeft className="w-5 h-5" />
-              Explore Existing Planets
-            </Button>
-          </Link>
-          <Link href="/new">
-            <Button size="lg" className="gap-2 min-w-[200px] bg-primary hover:bg-primary/90">
-              Create New Prediction
-            </Button>
-          </Link>
-        </div>
-      </div>
-    </div>
+    <UnifiedResults 
+      result={result} 
+      imageUrl={imageUrl} 
+      onImageLoad={setImageUrl} 
+    />
   )
 }
 
@@ -380,43 +201,6 @@ function analyzePlanetData(planetData: any, source: string): AnalysisResult {
     planetData,
     source,
   }
-}
-
-// Generate descriptive query for planet image
-function generatePlanetImageQuery(planetData: any): string {
-  const features = planetData.features || planetData
-  const temp = Number.parseFloat(features.equilibrium_temperature) || 250
-  const radius = Number.parseFloat(features.planet_radius) || 1
-  const hasRings = features.ring_system === true || features.ring_system === "true"
-
-  let description = "exoplanet in space"
-
-  // Temperature-based appearance
-  if (temp < 200) {
-    description += " frozen ice planet blue white"
-  } else if (temp < 300) {
-    description += " earth-like planet blue green"
-  } else if (temp < 500) {
-    description += " hot desert planet orange red"
-  } else {
-    description += " lava planet glowing red orange"
-  }
-
-  // Size-based
-  if (radius > 3) {
-    description += " gas giant"
-  } else if (radius > 1.5) {
-    description += " super earth"
-  }
-
-  // Rings
-  if (hasRings) {
-    description += " with ring system"
-  }
-
-  description += " realistic space background stars"
-
-  return description
 }
 
 // Normalize new Kepler/KOI field names to previous keys used in analysis
