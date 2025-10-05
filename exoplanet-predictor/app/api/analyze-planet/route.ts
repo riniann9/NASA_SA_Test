@@ -84,30 +84,30 @@ function generateFallbackAnalysis(formData: Record<string, unknown>): string {
   const isLikelyExoplanet = orbitalPeriod > 0 && planetRadius > 0 && temperature > 0
   const confidence = isLikelyExoplanet ? 85 : 25
 
-  return `**1. EXOPLANET CLASSIFICATION:**
+  return `1. EXOPLANET CLASSIFICATION:
 - Answer: ${isLikelyExoplanet ? 'Yes' : 'Unlikely'}
 - Confidence: ${confidence}%
 - Reasoning: ${isLikelyExoplanet ? 'Data shows characteristics consistent with confirmed exoplanets' : 'Insufficient or inconsistent data for exoplanet classification'}
 
-**2. SCIENTIFIC ANALYSIS:**
-• **Orbital Characteristics**: ${orbitalPeriod > 0 ? `Orbital period of ${orbitalPeriod} days suggests a stable orbit around the host star` : 'Orbital period data missing or invalid'}
-• **Physical Properties**: ${planetRadius > 0 ? `Planetary radius of ${planetRadius} Earth radii indicates a ${planetRadius > 3 ? 'gas giant' : planetRadius > 1.5 ? 'super-Earth' : 'terrestrial'} planet` : 'Planetary radius data unavailable'}
-• **Stellar Parameters**: ${stellarTemp > 0 ? `Host star temperature of ${stellarTemp}K suggests a ${stellarTemp > 6000 ? 'F-type' : stellarTemp > 5000 ? 'G-type' : 'K-type'} star` : 'Stellar temperature data missing'}
-• **Transit Properties**: Transit data indicates potential exoplanet detection through photometric observations
-• **Habitability Assessment**: ${temperature > 0 ? `Equilibrium temperature of ${temperature}K suggests ${temperature < 300 ? 'potentially habitable' : temperature < 500 ? 'hot but potentially habitable' : 'uninhabitable'} conditions` : 'Temperature data unavailable'}
-• **Comparison to Known Exoplanets**: Parameters align with confirmed exoplanet characteristics in the Kepler database
+2. SCIENTIFIC ANALYSIS:
+• Orbital Characteristics: ${orbitalPeriod > 0 ? `Orbital period of ${orbitalPeriod} days suggests a stable orbit around the host star` : 'Orbital period data missing or invalid'}
+• Physical Properties: ${planetRadius > 0 ? `Planetary radius of ${planetRadius} Earth radii indicates a ${planetRadius > 3 ? 'gas giant' : planetRadius > 1.5 ? 'super-Earth' : 'terrestrial'} planet` : 'Planetary radius data unavailable'}
+• Stellar Parameters: ${stellarTemp > 0 ? `Host star temperature of ${stellarTemp}K suggests a ${stellarTemp > 6000 ? 'F-type' : stellarTemp > 5000 ? 'G-type' : 'K-type'} star` : 'Stellar temperature data missing'}
+• Transit Properties: Transit data indicates potential exoplanet detection through photometric observations
+• Habitability Assessment: ${temperature > 0 ? `Equilibrium temperature of ${temperature}K suggests ${temperature < 300 ? 'potentially habitable' : temperature < 500 ? 'hot but potentially habitable' : 'uninhabitable'} conditions` : 'Temperature data unavailable'}
+• Comparison to Known Exoplanets: Parameters align with confirmed exoplanet characteristics in the Kepler database
 
-**3. PLANET TYPE & CHARACTERISTICS:**
+3. PLANET TYPE & CHARACTERISTICS:
 - Classification: ${planetRadius > 3 ? 'Gas Giant' : planetRadius > 1.5 ? 'Super-Earth' : 'Terrestrial'}
 - Habitability: ${temperature > 0 && temperature < 350 ? 'Potentially Habitable' : 'Uninhabitable'}
 - Key features: ${temperature > 0 ? `Surface temperature ${temperature}K, ${planetRadius > 0 ? `${planetRadius}x Earth size` : 'unknown size'}` : 'Limited data available'}
 
-**4. CONFIDENCE FACTORS:**
+4. CONFIDENCE FACTORS:
 - Strengths: ${isLikelyExoplanet ? 'Data consistency with known exoplanet parameters, stable orbital characteristics' : 'Some parameters available for analysis'}
 - Concerns: ${!isLikelyExoplanet ? 'Insufficient or inconsistent data, potential false positive' : 'Limited atmospheric composition data'}
 - Data quality: ${Object.keys(formData).length > 10 ? 'Good coverage of key parameters' : 'Limited parameter coverage'}
 
-**Note**: This analysis was generated using fallback algorithms due to API quota limitations. For the most accurate scientific analysis, please try again later when API access is restored.`
+Note: This analysis was generated using fallback algorithms due to API quota limitations. For the most accurate scientific analysis, please try again later when API access is restored.`
 }
 
 function buildPrompt(formData: Record<string, unknown>): string {
@@ -117,20 +117,20 @@ function buildPrompt(formData: Record<string, unknown>): string {
 
   return `You are an expert astrophysicist analyzing NASA Kepler mission data to determine if this celestial object is an exoplanet.
 
-**ANALYSIS TASK:**
+ANALYSIS TASK:
 Based on the following Kepler dataset parameters, provide a comprehensive scientific analysis:
 
-**DATA PROVIDED:**
+DATA PROVIDED:
 ${entries}
 
-**REQUIRED ANALYSIS FORMAT:**
+REQUIRED ANALYSIS FORMAT:
 
-**1. EXOPLANET CLASSIFICATION:**
+1. EXOPLANET CLASSIFICATION:
 - Answer: [Yes/No/Likely/Unlikely]
 - Confidence: [0-100]%
 - Reasoning: [Brief explanation of key factors]
 
-**2. SCIENTIFIC ANALYSIS:**
+2. SCIENTIFIC ANALYSIS:
 Provide 4-6 detailed bullet points covering:
 • Orbital characteristics and their significance
 • Physical properties and planet type classification  
@@ -139,15 +139,15 @@ Provide 4-6 detailed bullet points covering:
 • Habitability assessment
 • Comparison to known exoplanet characteristics
 
-**3. PLANET TYPE & CHARACTERISTICS:**
+3. PLANET TYPE & CHARACTERISTICS:
 - Classification: [terrestrial/super-Earth/gas giant/ice giant/etc.]
 - Habitability: [habitable/potentially habitable/uninhabitable]
 - Key features: [atmosphere, surface conditions, orbital dynamics]
 
-**4. CONFIDENCE FACTORS:**
+4. CONFIDENCE FACTORS:
 - Strengths: [What supports exoplanet classification]
 - Concerns: [What might indicate false positive]
 - Data quality: [Assessment of measurement reliability]
 
-Provide detailed, scientifically accurate analysis suitable for research presentation.`
+Provide detailed, scientifically accurate analysis in plain text format without markdown formatting.`
 }
