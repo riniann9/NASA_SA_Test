@@ -119,11 +119,12 @@ export function PlanetInfoPanel({ planet, onClose, onAnalyze }: PlanetInfoPanelP
         }
         
       // Navigate to results page with the analysis
-        const params = new URLSearchParams({
+      const params = new URLSearchParams({
         planetData: JSON.stringify(planetFormData),
         analysisResult: JSON.stringify(analysisResult),
-          source: "existing"
-        })
+        geminiPrompt: planet.gemini_prompt,
+        source: "existing"
+      })
         
         router.push(`/results?${params.toString()}`)
       } catch (error) {

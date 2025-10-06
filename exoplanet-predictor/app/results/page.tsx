@@ -36,12 +36,18 @@ function ResultsContent() {
   const [result, setResult] = useState<AnalysisResult | null>(null)
   const [planetImage, setPlanetImage] = useState<string | null>(null)
   const [isGeneratingImage, setIsGeneratingImage] = useState(false)
+  const [geminiPrompt, setGeminiPrompt] = useState<string | null>(null)
 
   useEffect(() => {
     const planetDataStr = searchParams.get("planetData")
     const analysisResultStr = searchParams.get("analysisResult")
     const source = searchParams.get("source")
     const error = searchParams.get("error")
+    const geminiPromptParam = searchParams.get("geminiPrompt")
+
+    if (geminiPromptParam) {
+      setGeminiPrompt(geminiPromptParam)
+    }
 
     if (planetDataStr) {
       const planetData = JSON.parse(planetDataStr)
@@ -177,6 +183,19 @@ function ResultsContent() {
               AI Analysis
             </h2>
             <p className="text-foreground leading-relaxed">{result.explanation}</p>
+            
+            {/* Gemini Prompt Display */}
+            {geminiPrompt && (
+              <div className="mt-6 p-4 bg-gradient-to-r from-purple-900/20 to-blue-900/20 rounded-lg border border-purple-500/30">
+                <h3 className="text-lg font-semibold text-purple-200 mb-3 flex items-center gap-2">
+                  <span className="text-lg">✨</span>
+                  Gemini Analysis Prompt
+                </h3>
+                <div className="text-sm text-gray-300 leading-relaxed max-h-40 overflow-y-auto bg-black/20 p-3 rounded border border-gray-600/30">
+                  {geminiPrompt}
+                </div>
+              </div>
+            )}
           </Card>
 
           {/* AI Generated Exoplanet Image */}
