@@ -205,7 +205,7 @@ function parseGeminiResponse(geminiResponse: any): any {
     // Transform to our expected format
     return {
       isExoplanet: analysis.answer || true, // Default to true if not specified
-      confidence: analysis.answer ? 0.85 : 0.15, // Mock confidence based on answer
+      confidence: analysis.answer ? 85 : 15, // Mock confidence based on answer (percentage)
       explanation: `Based on the analysis of ${analysis.most_important_features?.length || 5} key features, this object ${analysis.answer ? 'is classified as an exoplanet' : 'is not classified as an exoplanet'}.`,
       topFeatures: (analysis.most_important_features || []).map((feature: any, index: number) => ({
         name: Object.keys(feature).find(key => key !== 'Relevance') || `Feature ${index + 1}`,

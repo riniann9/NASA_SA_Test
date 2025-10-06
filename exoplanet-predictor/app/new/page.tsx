@@ -91,7 +91,7 @@ export default function NewPage() {
       setLightCurveResults(results)
     } catch (error) {
       console.error('Error analyzing light curve:', error)
-      alert(`Failed to analyze light curve: ${error instanceof Error ? error.message : 'Unknown error'}. Make sure the Python server is running on port 5000.`)
+      alert(`Failed to analyze light curve: ${error instanceof Error ? error.message : 'Unknown error'}. The analysis will use simulated data.`)
     } finally {
       setIsAnalyzingLightCurve(false)
     }
