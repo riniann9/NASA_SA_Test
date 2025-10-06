@@ -2,19 +2,30 @@
 
 import { useEffect, useState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
-import { UnifiedResults } from "@/components/unified-results"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { ArrowLeft, CheckCircle2, XCircle, TrendingUp, Home } from "lucide-react"
+import Link from "next/link"
+import { Progress } from "@/components/ui/progress"
 
 type AnalysisResult = {
   isExoplanet: boolean
   confidence: number
   explanation: string
-  aiAnalysis?: string
   topFeatures: Array<{
     name: string
     impact: number
     value: string | number
     reasoning: string
   }>
+  geminiAnalysis?: {
+    answer: boolean
+    most_important_features: Array<{
+      [key: string]: string
+      Relevance: string
+    }>
+  }
   planetData: any
   source: string
 }
@@ -22,26 +33,69 @@ type AnalysisResult = {
 function ResultsContent() {
   const searchParams = useSearchParams()
   const [result, setResult] = useState<AnalysisResult | null>(null)
-  const [imageUrl, setImageUrl] = useState<string | null>(null)
+  const [planetImage, setPlanetImage] = useState<string | null>(null)
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false)
 
   useEffect(() => {
     const planetDataStr = searchParams.get("planetData")
-    const aiAnalysisStr = searchParams.get("aiAnalysis")
+    const analysisResultStr = searchParams.get("analysisResult")
     const source = searchParams.get("source")
     const error = searchParams.get("error")
 
     if (planetDataStr) {
       const planetData = JSON.parse(planetDataStr)
-      const aiAnalysis = aiAnalysisStr ? JSON.parse(aiAnalysisStr) : null
-
-      // Use AI analysis if available, otherwise fallback to mock analysis
-      const analysis = aiAnalysis 
-        ? analyzePlanetDataWithAI(planetData, aiAnalysis, source || "unknown")
-        : analyzePlanetData(planetData, source || "unknown")
       
-      setResult(analysis)
+      if (analysisResultStr) {
+        // Use real Gemini analysis
+        const analysisResult = JSON.parse(analysisResultStr)
+        setResult({
+          ...analysisResult,
+          planetData,
+          source: source || "unknown"
+        })
+      } else {
+        // Fallback to mock analysis
+        const mockAnalysis = analyzePlanetData(planetData, source || "unknown")
+        if (error) {
+          mockAnalysis.explanation += ` (${error})`
+        }
+        setResult(mockAnalysis)
+      }
     }
   }, [searchParams])
+
+  // Auto-generate planet image when result is loaded
+  useEffect(() => {
+    if (result?.planetData && !planetImage && !isGeneratingImage) {
+      generatePlanetImage()
+    }
+  }, [result, planetImage, isGeneratingImage])
+
+  const generatePlanetImage = async () => {
+    if (!result?.planetData) return
+
+    setIsGeneratingImage(true)
+    try {
+      const response = await fetch('/api/generate-planet-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ planetData: result.planetData }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setPlanetImage(data.imageUrl)
+      } else {
+        console.error('Failed to generate planet image')
+      }
+    } catch (error) {
+      console.error('Error generating planet image:', error)
+    } finally {
+      setIsGeneratingImage(false)
+    }
+  }
 
   if (!result) {
     return (
@@ -51,12 +105,254 @@ function ResultsContent() {
     )
   }
 
+
   return (
-    <UnifiedResults 
-      result={result} 
-      imageUrl={imageUrl} 
-      onImageLoad={setImageUrl} 
-    />
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Cosmic background effects */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div
+          className={`absolute top-1/4 right-1/4 w-96 h-96 ${result.isExoplanet ? "bg-primary/10" : "bg-destructive/10"} rounded-full blur-[120px] animate-pulse`}
+        />
+        <div
+          className={`absolute bottom-1/4 left-1/4 w-96 h-96 ${result.isExoplanet ? "bg-accent/10" : "bg-muted/10"} rounded-full blur-[120px] animate-pulse`}
+          style={{ animationDelay: "1s" }}
+        />
+      </div>
+
+      <div className="relative z-10 container mx-auto px-4 py-8 max-w-7xl">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <Link href="/">
+            <Button variant="outline" size="sm" className="gap-2 bg-transparent">
+              <Home className="w-4 h-4" />
+              Back to Home
+            </Button>
+          </Link>
+
+          <Badge variant="outline" className="text-sm">
+            Source: {result.source === "existing" ? "Existing Data" : "New Prediction"}
+          </Badge>
+        </div>
+
+        {/* Main Result Card */}
+        <Card
+          className={`p-8 mb-8 border-4 ${result.isExoplanet ? "border-primary bg-primary/5" : "border-destructive bg-destructive/5"}`}
+        >
+          <div className="flex flex-col md:flex-row items-center gap-8">
+            {/* Result Icon */}
+            <div className="flex-shrink-0">
+              {result.isExoplanet ? (
+                <CheckCircle2 className="w-32 h-32 text-primary animate-pulse" />
+              ) : (
+                <XCircle className="w-32 h-32 text-destructive animate-pulse" />
+              )}
+            </div>
+
+            {/* Result Text */}
+            <div className="flex-1 text-center md:text-left">
+              <div className="flex items-center gap-4 mb-4">
+                <h1 className="text-5xl font-bold text-balance">
+                  {result.isExoplanet ? (
+                    <span className="text-primary">Exoplanet Detected!</span>
+                  ) : (
+                    <span className="text-destructive">Not an Exoplanet</span>
+                  )}
+                </h1>
+                {/* Real Disposition for Kepler-442b */}
+                {result.planetData?.orbital_period === "112.303136" && (
+                  <div className="bg-green-600/20 border border-green-500/50 rounded-lg px-4 py-2">
+                    <span className="text-green-400 font-semibold text-lg">Real Disposition: Confirmed</span>
+                  </div>
+                )}
+              </div>
+              <p className="text-xl text-muted-foreground mb-4">
+                Confidence Level: <span className="font-bold text-foreground">{result.confidence}%</span>
+              </p>
+              <Progress value={result.confidence} className="h-3" />
+            </div>
+          </div>
+        </Card>
+
+        {/* AI Analysis and Image Generation */}
+        <div className="grid lg:grid-cols-2 gap-6">
+          {/* AI Explanation */}
+          <Card className="p-6 bg-card/50 backdrop-blur border-2 border-border">
+            <h2 className="text-2xl font-bold mb-4 text-primary flex items-center gap-2">
+              <TrendingUp className="w-6 h-6" />
+              AI Analysis
+            </h2>
+            <p className="text-foreground leading-relaxed">{result.explanation}</p>
+          </Card>
+
+          {/* AI Generated Exoplanet Image */}
+          <Card className="p-6 bg-card/50 backdrop-blur border-2 border-border">
+            <h2 className="text-2xl font-bold mb-4 text-primary flex items-center gap-2">
+              <span className="text-2xl">🪐</span>
+              AI Generated Exoplanet
+            </h2>
+            <div className="space-y-4">
+              {planetImage ? (
+                <div className="relative">
+                  <img
+                    src={planetImage}
+                    alt="AI Generated Exoplanet Visualization"
+                    className="w-full h-64 object-cover rounded-lg border border-border/50"
+                  />
+                  <div className="absolute top-2 left-2 bg-black/50 text-white px-2 py-1 rounded text-sm">
+                    AI Generated
+                  </div>
+                  <div className="absolute top-2 right-2">
+                    <Button
+                      onClick={generatePlanetImage}
+                      disabled={isGeneratingImage}
+                      size="sm"
+                      variant="outline"
+                      className="bg-black/50 text-white border-white/20 hover:bg-black/70"
+                    >
+                      {isGeneratingImage ? (
+                        <>
+                          <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                          Regenerating...
+                        </>
+                      ) : (
+                        <>
+                          🔄 Regenerate
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="w-full h-64 border-2 border-dashed border-border/50 rounded-lg flex items-center justify-center bg-background/30">
+                  <div className="text-center">
+                    {isGeneratingImage ? (
+                      <>
+                        <div className="text-4xl mb-4 animate-pulse">🪐</div>
+                        <p className="text-muted-foreground mb-4">Generating AI visualization...</p>
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                          <span className="text-sm text-muted-foreground">This may take a moment</span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-4xl mb-4">🪐</div>
+                        <p className="text-muted-foreground mb-4">AI-generated visualization based on your data</p>
+                        <Button
+                          onClick={generatePlanetImage}
+                          disabled={isGeneratingImage}
+                          className="gap-2"
+                        >
+                          {isGeneratingImage ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              Generating...
+                            </>
+                          ) : (
+                            <>
+                              Generate Planet Image
+                            </>
+                          )}
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+              <p className="text-sm text-muted-foreground text-center">
+                AI-generated visualization based on Kepler dataset parameters
+              </p>
+            </div>
+          </Card>
+        </div>
+
+        {/* Feature Impact Analysis */}
+        <Card className="p-4 sm:p-5 bg-card/50 backdrop-blur border border-border mb-4 sm:mb-6">
+          <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4 text-primary">Key Features Impact</h2>
+          <div className="space-y-4 sm:space-y-6">
+    {result.geminiAnalysis?.most_important_features ? 
+      result.geminiAnalysis.most_important_features.map((feature, index) => {
+        // Extract feature name and description
+        const featureNameKey = Object.keys(feature).find(key => key !== 'Relevance')
+        let featureDescription = featureNameKey ? feature[featureNameKey] : ''
+        const relevance = feature.Relevance
+
+        // Remove "Feature N:" prefix from description if it exists to avoid redundancy
+        const expectedPrefix = `Feature ${index + 1}: `
+        if (featureDescription.startsWith(expectedPrefix)) {
+          featureDescription = featureDescription.substring(expectedPrefix.length)
+        }
+
+        // Color code relevance based on the exact text
+        const getRelevanceColor = (relevance: string) => {
+          if (relevance.toLowerCase().includes('very high') || relevance.toLowerCase().includes('critical')) {
+            return 'text-red-400'
+          } else if (relevance.toLowerCase().includes('high')) {
+            return 'text-orange-400'
+          } else if (relevance.toLowerCase().includes('medium') || relevance.toLowerCase().includes('moderate')) {
+            return 'text-yellow-400'
+          } else {
+            return 'text-green-400'
+          }
+        }
+
+        return (
+          <div key={index} className="space-y-2">
+            <div className="flex items-start gap-2">
+              <Badge variant="outline" className="text-xs sm:text-sm px-2 py-1 mt-1">
+                #{index + 1}
+              </Badge>
+              <div className="flex-1">
+                <h3 className="font-semibold text-base text-foreground mb-2">Feature {index + 1}</h3>
+                <p className="text-sm text-foreground leading-relaxed mb-2">
+                  {featureDescription}
+                </p>
+                <p className={`text-sm font-medium ${getRelevanceColor(relevance)}`}>
+                  <span className="font-semibold">Relevance:</span> {relevance}
+                </p>
+              </div>
+            </div>
+          </div>
+        )
+      }) : result.topFeatures.map((feature, index) => (
+        <div key={index} className="space-y-2">
+          <div className="flex items-start gap-2">
+            <Badge variant="outline" className="text-xs sm:text-sm px-2 py-1 mt-1">
+              #{index + 1}
+            </Badge>
+            <div className="flex-1">
+              <h3 className="font-semibold text-base text-foreground mb-2">Feature {index + 1}</h3>
+              <p className="text-sm text-foreground leading-relaxed mb-2">
+                {feature.reasoning}
+              </p>
+              <p className="text-sm font-medium text-muted-foreground">
+                <span className="font-semibold">Relevance:</span> {feature.impact}% impact
+              </p>
+            </div>
+          </div>
+        </div>
+      ))
+    }
+          </div>
+        </Card>
+
+
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+          <Link href="/existing">
+            <Button size="lg" variant="outline" className="gap-2 min-w-[200px] bg-transparent">
+              <ArrowLeft className="w-5 h-5" />
+              Explore Existing Planets
+            </Button>
+          </Link>
+          <Link href="/new">
+            <Button size="lg" className="gap-2 min-w-[200px] bg-primary hover:bg-primary/90">
+              Create New Prediction
+            </Button>
+          </Link>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -74,73 +370,10 @@ export default function ResultsPage() {
   )
 }
 
-// AI analysis function that processes Gemini response
-function analyzePlanetDataWithAI(planetData: any, aiAnalysis: string, source: string): AnalysisResult {
-  // Extract key information from Gemini response
-  const isExoplanet = aiAnalysis.toLowerCase().includes('exoplanet') && 
-    (aiAnalysis.toLowerCase().includes('yes') || aiAnalysis.toLowerCase().includes('likely'))
-  
-  // Extract confidence from the response or calculate based on content
-  const confidenceMatch = aiAnalysis.match(/(\d+)%/i)
-  const confidence = confidenceMatch ? parseInt(confidenceMatch[1]) : 85
-
-  // Extract planet type if mentioned
-  const planetTypeMatch = aiAnalysis.match(/(super-earth|gas giant|terrestrial|rocky|ice giant)/i)
-  const planetType = planetTypeMatch ? planetTypeMatch[1] : 'Unknown'
-
-  // Create a summary explanation
-  const explanation = `Based on Gemini AI analysis, this celestial body ${isExoplanet ? 'is classified as an exoplanet' : 'does not meet exoplanet criteria'}. The AI has provided detailed scientific insights about the planetary characteristics, habitability potential, and scientific significance.`
-
-  // Extract top features from the analysis
-  const topFeatures = [
-    {
-      name: "AI Classification",
-      impact: 95,
-      value: isExoplanet ? "Exoplanet" : "Not Exoplanet",
-      reasoning: "Primary determination from Gemini AI analysis",
-    },
-    {
-      name: "Planet Type",
-      impact: 88,
-      value: planetType,
-      reasoning: "Classification based on physical and orbital characteristics",
-    },
-    {
-      name: "Habitability Assessment",
-      impact: 82,
-      value: planetData.habitability_score || "Unknown",
-      reasoning: "Potential for supporting life based on environmental conditions",
-    },
-    {
-      name: "Orbital Characteristics",
-      impact: 76,
-      value: `${planetData.orbital_period} days`,
-      reasoning: "Orbital period and distance from host star",
-    },
-    {
-      name: "Physical Properties",
-      impact: 71,
-      value: `${planetData.planet_radius} Earth radii`,
-      reasoning: "Size and mass characteristics compared to Earth",
-    },
-  ]
-
-  return {
-    isExoplanet,
-    confidence,
-    explanation,
-    aiAnalysis,
-    topFeatures,
-    planetData,
-    source,
-  }
-}
-
 // Placeholder AI analysis function
 function analyzePlanetData(planetData: any, source: string): AnalysisResult {
   // Extract features for analysis
-  const raw = source === "existing" ? planetData.features : planetData
-  const features = normalizePlanetData(raw)
+  const features = source === "existing" ? planetData.features : planetData
 
   // Simple heuristic: check habitability score or other key metrics
   const habitabilityScore = Number.parseFloat(features.habitability_score) || 0
@@ -203,18 +436,3 @@ function analyzePlanetData(planetData: any, source: string): AnalysisResult {
   }
 }
 
-// Normalize new Kepler/KOI field names to previous keys used in analysis
-function normalizePlanetData(data: any) {
-  if (!data) return {}
-  const out: any = { ...data }
-  // Map new names -> legacy keys consumed by analysis and image prompt
-  if (data.planetary_radius_earth_radii) out.planet_radius = String(data.planetary_radius_earth_radii)
-  if (data.orbital_period_days) out.orbital_period = String(data.orbital_period_days)
-  if (data.equilibrium_temperature_k) out.equilibrium_temperature = String(data.equilibrium_temperature_k)
-  if (data.insolation_flux_earth_flux) out.insolation_flux = String(data.insolation_flux_earth_flux)
-  if (data.stellar_effective_temperature_k) out.stellar_temperature = String(data.stellar_effective_temperature_k)
-  if (data.stellar_radius_solar_radii) out.stellar_radius = String(data.stellar_radius_solar_radii)
-  // Rings not present; default to false
-  if (out.ring_system === undefined) out.ring_system = "false"
-  return out
-}
