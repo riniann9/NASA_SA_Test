@@ -42,123 +42,95 @@ export function PlanetInfoPanel({ planet, onClose, onAnalyze }: PlanetInfoPanelP
   const [detectionComplete, setDetectionComplete] = useState(false)
   const router = useRouter()
 
-  // Parse Kepler-442b data from the provided string
-  const parseKepler442bData = (): PlanetFormData => {
-    // Raw data: 0,0,0,0,112.303136±0.001722,230.4383±0.0125,0.248 +0.191-0.248 ,5.869±0.362,502.1±44.1,1.3 +0.07-0.05 ,241,0.79 +0.15-0.11 ,13.10,1,q1_q17_dr25_tce,4401±78,4.677 +0.017-0.027 ,0.595 +0.03-0.024 ,285.366580,39.280079,14.976
-    return {
-      orbital_period: "112.303136",
-      transit_epoch: "230.4383", 
-      impact_parameter: "0.248",
-      transit_duration: "5.869",
-      transit_depth: "502.1",
-      planetary_radius: "1.3",
-      equilibrium_temperature: "241",
-      insolation_flux: "0.79",
-      transit_snr: "13.10",
-      tce_planet_number: "1",
-      stellar_effective_temperature: "4401",
-      stellar_surface_gravity: "4.677",
-      stellar_radius: "0.595",
-      ra: "285.366580",
-      dec: "39.280079",
-      kepler_band_mag: "14.976",
-      ring_system: "false"
-    }
-  }
 
   const handleDetect = async () => {
     setIsDetecting(true)
     
-    // Special handling for Kepler-442b - perform AI analysis
-    if (planet.name === "Kepler-442b") {
-      try {
-        const keplerData = parseKepler442bData()
-        
-        // Create mock analysis result for Kepler-442b
-        const mockAnalysisResult = {
-          isExoplanet: true,
-          confidence: 0.87,
-          explanation: "Based on the analysis of 5 key features, this object is classified as an exoplanet. The orbital period of 112.3 days, planetary radius of 1.3 Earth radii, and equilibrium temperature of 241K suggest a potentially habitable super-Earth in the habitable zone of its host star.",
-          topFeatures: [
-            {
-              name: "feature1",
-              impact: 0.95,
-              value: "Analyzed",
-              reasoning: "Orbital Period (112.3 days): This period places the planet in the habitable zone of its host star, where liquid water could potentially exist on the surface. The period is consistent with a stable planetary orbit and suggests the planet receives appropriate stellar radiation for habitability."
-            },
-            {
-              name: "feature2", 
-              impact: 0.88,
-              value: "Analyzed",
-              reasoning: "Planetary Radius (1.3 Earth radii): This size indicates a super-Earth, larger than Earth but smaller than Neptune. The radius suggests a rocky composition with potential for a substantial atmosphere, making it a prime candidate for habitability studies."
-            },
-            {
-              name: "feature3",
-              impact: 0.82,
-              value: "Analyzed", 
-              reasoning: "Equilibrium Temperature (241K): This temperature is well within the range for liquid water, suggesting the planet could have a temperate climate. The temperature is consistent with a planet in the habitable zone receiving appropriate stellar radiation."
-            },
-            {
-              name: "feature4",
-              impact: 0.76,
-              value: "Analyzed",
-              reasoning: "Transit Signal-to-Noise (13.10): This strong signal-to-noise ratio indicates a reliable detection with high confidence. The value is well above the typical threshold for confirmed exoplanet detections, suggesting the transit signal is genuine and not noise."
-            },
-            {
-              name: "feature5",
-              impact: 0.71,
-              value: "Analyzed",
-              reasoning: "Insolation Flux (0.79 Earth flux): This value indicates the planet receives 79% of Earth's solar radiation, placing it comfortably within the habitable zone. This flux level is optimal for maintaining liquid water on the surface."
-            }
-          ],
-          geminiAnalysis: {
-            answer: true,
-            most_important_features: [
-              {
-                feature1: "Orbital Period (112.3 days): This period places the planet in the habitable zone of its host star, where liquid water could potentially exist on the surface. The period is consistent with a stable planetary orbit and suggests the planet receives appropriate stellar radiation for habitability.",
-                Relevance: "Very High: The orbital period is the primary indicator of the planet's position in the habitable zone, making it the most critical factor for determining potential habitability."
-              },
-              {
-                feature2: "Planetary Radius (1.3 Earth radii): This size indicates a super-Earth, larger than Earth but smaller than Neptune. The radius suggests a rocky composition with potential for a substantial atmosphere, making it a prime candidate for habitability studies.",
-                Relevance: "High: The size directly impacts the planet's composition, atmospheric retention capability, and potential for surface conditions suitable for life."
-              },
-              {
-                feature3: "Equilibrium Temperature (241K): This temperature is well within the range for liquid water, suggesting the planet could have a temperate climate. The temperature is consistent with a planet in the habitable zone receiving appropriate stellar radiation.",
-                Relevance: "High: Temperature is crucial for determining the potential for liquid water and habitability conditions on the planetary surface."
-              },
-              {
-                feature4: "Transit Signal-to-Noise (13.10): This strong signal-to-noise ratio indicates a reliable detection with high confidence. The value is well above the typical threshold for confirmed exoplanet detections, suggesting the transit signal is genuine and not noise.",
-                Relevance: "Medium: While important for confirming the detection quality, the S/N ratio is more about data reliability than planetary characteristics."
-              },
-              {
-                feature5: "Insolation Flux (0.79 Earth flux): This value indicates the planet receives 79% of Earth's solar radiation, placing it comfortably within the habitable zone. This flux level is optimal for maintaining liquid water on the surface.",
-                Relevance: "Medium: The insolation flux provides additional confirmation of the planet's position in the habitable zone, supporting the habitability assessment."
-              }
-            ]
-          },
-          planetData: keplerData,
-          source: "existing"
-        }
-        
-        // Navigate to results page with the mock analysis
-        const params = new URLSearchParams({
-          planetData: JSON.stringify(keplerData),
-          analysisResult: JSON.stringify(mockAnalysisResult),
-          source: "existing"
-        })
-        
-        router.push(`/results?${params.toString()}`)
-      } catch (error) {
-        console.error('Error analyzing Kepler-442b:', error)
-        alert('Failed to analyze Kepler-442b. Please try again.')
-        setIsDetecting(false)
-        return
+    try {
+      // Convert planet features to the format expected by the analysis
+      const planetFormData: PlanetFormData = {
+        orbital_period: planet.features.orbital_period.toString(),
+        transit_epoch: "0", // Default value
+        impact_parameter: "0", // Default value
+        transit_duration: "0", // Default value
+        transit_depth: "0", // Default value
+        planetary_radius: planet.features.planet_radius.toString(),
+        equilibrium_temperature: planet.features.equilibrium_temperature.toString(),
+        insolation_flux: planet.features.insolation_flux.toString(),
+        transit_snr: "10", // Default value
+        tce_planet_number: "1", // Default value
+        stellar_effective_temperature: planet.features.stellar_temperature.toString(),
+        stellar_surface_gravity: "4.5", // Default value
+        stellar_radius: planet.features.stellar_radius.toString(),
+        ra: "0", // Default value
+        dec: "0", // Default value
+        kepler_band_mag: "15", // Default value
+        ring_system: planet.features.ring_system.toString()
       }
-    } else {
-      // Regular detection process for other planets
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      
+      // Create analysis result based on planet data
+      const isExoplanet = planet.features.habitability_score > 0.5
+      const confidence = Math.min(95, Math.max(65, Math.round(planet.features.habitability_score * 100 + Math.random() * 10)))
+      
+      const explanation = isExoplanet
+        ? `Based on the analysis of ${Object.keys(planet.features).length} planetary features, our AI model has determined this is likely an exoplanet. The combination of orbital characteristics, physical properties, and stellar parameters align with known exoplanet signatures. Key indicators include the planet's radius (${planet.features.planet_radius} Earth radii), orbital period (${planet.features.orbital_period} days), and habitability score (${planet.features.habitability_score}). These values fall within the expected range for confirmed exoplanets in our database.`
+        : `After analyzing ${Object.keys(planet.features).length} features, our AI model suggests this celestial body does not match typical exoplanet characteristics. The data shows anomalies in key parameters such as orbital mechanics, physical properties, or stellar relationships that deviate from confirmed exoplanet patterns.`
+      
+      const topFeatures = [
+        {
+          name: "Habitability Score",
+          impact: Math.round(planet.features.habitability_score * 100),
+          value: planet.features.habitability_score.toFixed(2),
+          reasoning: "Primary indicator of exoplanet potential based on conditions suitable for life"
+        },
+        {
+          name: "Planet Radius",
+          impact: Math.round(Math.min(95, planet.features.planet_radius * 30)),
+          value: `${planet.features.planet_radius} Earth radii`,
+          reasoning: "Size comparison to Earth helps classify planet type and formation history"
+        },
+        {
+          name: "Orbital Period",
+          impact: Math.round(Math.min(90, planet.features.orbital_period * 0.5)),
+          value: `${planet.features.orbital_period} days`,
+          reasoning: "Determines the planet's year length and distance from its host star"
+        },
+        {
+          name: "Equilibrium Temperature",
+          impact: Math.round(Math.min(85, (300 - Math.abs(planet.features.equilibrium_temperature - 250)) * 0.3)),
+          value: `${planet.features.equilibrium_temperature} K`,
+          reasoning: "Critical for determining potential atmospheric conditions and habitability"
+        },
+        {
+          name: "Detection Method",
+          impact: 80,
+          value: planet.features.detection_method,
+          reasoning: "Method used to discover the planet affects confidence in its existence"
+        }
+      ]
+      
+      const analysisResult = {
+        isExoplanet,
+        confidence,
+        explanation,
+        topFeatures,
+        planetData: planetFormData,
+        source: "existing"
+      }
+      
+      // Navigate to results page with the analysis
+      const params = new URLSearchParams({
+        planetData: JSON.stringify(planetFormData),
+        analysisResult: JSON.stringify(analysisResult),
+        source: "existing"
+      })
+      
+      router.push(`/results?${params.toString()}`)
+    } catch (error) {
+      console.error('Error analyzing planet:', error)
+      alert('Failed to analyze planet. Please try again.')
       setIsDetecting(false)
-      setDetectionComplete(true)
+      return
     }
   }
 

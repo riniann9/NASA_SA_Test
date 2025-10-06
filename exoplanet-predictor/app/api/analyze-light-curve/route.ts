@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     pythonFormData.append('file', new Blob([buffer]), fitsFile.name)
 
     // Call the Python server running on port 5000
-    const pythonServerUrl = 'http://localhost:5000/api/extract'
+    const pythonServerUrl = 'http://54.241.157.82:5000/api/extract'
     
     const response = await fetch(pythonServerUrl, {
       method: 'POST',

@@ -469,7 +469,7 @@ export default function NewPage() {
               Analyze with AI
               <Sparkles className="w-6 h-6 group-hover:animate-spin" />
             </Button>
-            <Link href="http://192.168.1.94:5000/" target="_blank" rel="noopener noreferrer">
+            <Link href="http://54.241.157.82:5000/" target="_blank" rel="noopener noreferrer">
               <Button
                 type="button"
                 size="lg"
