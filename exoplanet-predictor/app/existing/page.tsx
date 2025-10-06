@@ -14,6 +14,7 @@ export type PlanetData = {
   position: [number, number, number]
   color: string
   size: number
+  gemini_prompt: string
   features: {
     orbital_period: number
     planet_radius: number
