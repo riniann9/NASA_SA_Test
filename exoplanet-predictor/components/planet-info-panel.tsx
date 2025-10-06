@@ -115,18 +115,18 @@ export function PlanetInfoPanel({ planet, onClose, onAnalyze }: PlanetInfoPanelP
         explanation,
         topFeatures,
         planetData: planetFormData,
-        source: "existing"
-      }
-      
+          source: "existing"
+        }
+        
       // Navigate to results page with the analysis
-      const params = new URLSearchParams({
+        const params = new URLSearchParams({
         planetData: JSON.stringify(planetFormData),
         analysisResult: JSON.stringify(analysisResult),
-        source: "existing"
-      })
-      
-      router.push(`/results?${params.toString()}`)
-    } catch (error) {
+          source: "existing"
+        })
+        
+        router.push(`/results?${params.toString()}`)
+      } catch (error) {
       console.error('Error analyzing planet:', error)
       alert('Failed to analyze planet. Please try again.')
       setIsDetecting(false)
@@ -221,6 +221,18 @@ export function PlanetInfoPanel({ planet, onClose, onAnalyze }: PlanetInfoPanelP
                   <h3 className="text-xl font-semibold mb-4 text-white">Planet Features</h3>
                   <ScrollArea className="flex-1 pr-4">
                     <div className="space-y-3">
+                      {/* Gemini Prompt Section */}
+                      <div className="p-4 bg-gradient-to-r from-purple-900/30 to-blue-900/30 rounded-lg border border-purple-500/30 hover:border-purple-400/50 transition-all">
+                        <h4 className="text-sm font-semibold text-purple-200 mb-2 flex items-center gap-2">
+                          <Sparkles className="w-4 h-4" />
+                          AI Analysis Prompt
+                        </h4>
+                        <div className="text-xs text-gray-300 leading-relaxed max-h-32 overflow-y-auto">
+                          {planet.gemini_prompt}
+                        </div>
+                      </div>
+                      
+                      {/* Regular Features */}
                       {features.map((feature, index) => (
                         <div
                           key={index}
