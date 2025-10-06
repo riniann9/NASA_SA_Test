@@ -42,19 +42,19 @@ export function UnifiedResults({ result, imageUrl, onImageLoad }: UnifiedResults
     let isMounted = true
     async function loadImage() {
       if (!planetImageQuery) return
-      try {
-        const res = await fetch('/api/generate-planet-image', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt: planetImageQuery })
-        })
-        if (!res.ok) throw new Error('image api failed')
-        const data = await res.json()
-        if (isMounted && data.imageUrl) onImageLoad(data.imageUrl)
-      } catch {
+      // try {
+      //   const res = await fetch('/api/generate-planet-image', {
+      //     method: 'POST',
+      //     headers: { 'Content-Type': 'application/json' },
+      //     body: JSON.stringify({ prompt: planetImageQuery })
+      //   })
+      //   if (!res.ok) throw new Error('image api failed')
+      //   const data = await res.json()
+      //   if (isMounted && data.imageUrl) onImageLoad(data.imageUrl)
+      // } catch {
         // fall back to public AI image generator
         if (isMounted) onImageLoad(`https://image.pollinations.ai/prompt/${encodeURIComponent(planetImageQuery)}?width=400&height=400`)
-      }
+      // }
     }
     loadImage()
     return () => { isMounted = false }
@@ -233,7 +233,7 @@ function normalizePlanetData(data: any) {
 }
 
 // Generate descriptive query for planet image
-function generatePlanetImageQuery(planetData: any): string {
+export function generatePlanetImageQuery(planetData: any): string {
   const features = planetData.features || planetData
   const temp = Number.parseFloat(features.equilibrium_temperature) || 250
   const radius = Number.parseFloat(features.planet_radius) || 1

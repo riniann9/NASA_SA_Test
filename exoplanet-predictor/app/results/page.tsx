@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, CheckCircle2, XCircle, TrendingUp, Home } from "lucide-react"
 import Link from "next/link"
 import { Progress } from "@/components/ui/progress"
+import { generatePlanetImageQuery } from "@/components/planet-image-utils"
 
 type AnalysisResult = {
   isExoplanet: boolean
@@ -76,17 +77,11 @@ function ResultsContent() {
 
     setIsGeneratingImage(true)
     try {
-      const response = await fetch('/api/generate-planet-image', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ planetData: result.planetData }),
-      })
+      const planetImageQuery = generatePlanetImageQuery(result.planetData)
+      const image_url = `https://image.pollinations.ai/prompt/${encodeURIComponent(planetImageQuery)}?width=400&height=400`;
 
-      if (response.ok) {
-        const data = await response.json()
-        setPlanetImage(data.imageUrl)
+      if (image_url) {
+        setPlanetImage(image_url)
       } else {
         console.error('Failed to generate planet image')
       }
