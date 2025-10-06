@@ -44,10 +44,7 @@ export default function HomePage() {
           {/* Title */}
           <div className="space-y-4 animate-float">
             <h1 className="text-6xl md:text-8xl font-bold text-balance text-white drop-shadow-[0_0_30px_rgba(0,255,255,0.5)]">
-              Exoplanet
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500">
-                Predictor
-              </span>
+              Exo-Plain
             </h1>
             <p className="text-xl md:text-2xl text-cyan-100 text-balance drop-shadow-[0_0_10px_rgba(0,255,255,0.3)]">
               Discover and analyze exoplanets using advanced AI prediction models

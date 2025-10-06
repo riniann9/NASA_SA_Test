@@ -7,7 +7,7 @@ import { Suspense } from "react"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "Exoplanet Predictor",
+  title: "Exo-Plain",
   description: "Discover and analyze exoplanets using AI",
   generator: "v0.app",
 }
